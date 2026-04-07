@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="description" content="FitGuide AI - Adaptive fitness coach with personalized plans, progress tracking, and smart motivation. Your AI-powered health companion.">
+  <meta name="keywords" content="fitness AI, workout planner, diet generator, health coach, adaptive AI, gamification, progress tracker">
+  <meta name="author" content="FitGuide AI">
+  <title>FitGuide AI | Adaptive Fitness Coach</title>
+  <!-- Google Fonts & Tailwind CSS for faster styling + responsiveness -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for visual progress tracker -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: linear-gradient(145deg, #f6f9fc 0%, #eef2f5 100%); }
+    .glass-card {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(2px);
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+    }
+    .ad-placeholder {
+      background: #f1f5f9;
+      border-radius: 1rem;
+      border: 1px dashed #94a3b8;
+      color: #475569;
+      font-size: 0.75rem;
+      text-align: center;
+      padding: 0.75rem;
+      transition: all 0.2s;
+    }
+    .progress-bar {
+      transition: width 0.4s ease;
+    }
+    button, .clickable {
+      transition: all 0.2s ease;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+  </style>
+</head>
+<body class="antialiased">
+
+  <div class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <!-- Header + Subscription status -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-600 text-white p-2 rounded-2xl shadow-md">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-blue-700 to-emerald-600 bg-clip-text text-transparent">FitGuide AI<span class="text-sm font-medium text-gray-500 ml-2">Adaptive Coach</span></h1>
+      </div>
+      <div class="flex gap-2 items-center">
+        <div id="subscriptionBadge" class="bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm">⚠️ Free Trial · Subscribe $25/mo</div>
+        <button id="subscribeBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded-full text-sm font-bold shadow-md transition">Subscribe</button>
+      </div>
+    </div>
+
+    <!-- Two column layout: main AI area + right sidebar (ads + quick stats) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- MAIN LEFT PANEL (2 cols on large) -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Chat/AI Interaction Card -->
+        <div class="glass-card p-5 md:p-6">
+          <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><span class="bg-blue-100 text-blue-700 p-1 rounded-lg">🧠</span> Adaptive AI Coach</h2>
+          <div id="chatMessages" class="h-80 overflow-y-auto bg-gray-50 rounded-xl p-4 my-4 space-y-3 text-sm"></div>
+          <div class="flex gap-2">
+            <input type="text" id="userInput" placeholder="Ask me anything or update your mood/diet..." class="flex-1 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <button id="sendBtn" class="bg-blue-600 text-white px-5 rounded-xl font-semibold hover:bg-blue-700">Send</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button class="quickCmd text-xs bg-gray-100 px-3 py-1.5 rounded-full" data-cmd="I feel lazy today">😴 Lazy mode</button>
+            <button class="quickCmd text-xs bg-gray-100 px-3 py-1.5 rounded-full" data-cmd="I am energetic, give me intense workout">⚡ Energetic workout</button>
+            <button class="quickCmd text-xs bg-gray-100 px-3 py-1.5 rounded-full" data-cmd="Track my daily check-in">✅ Daily check-in</button>
+            <button class="quickCmd text-xs bg-gray-100 px-3 py-1.5 rounded-full" data-cmd="Show my progress">📊 Show progress</button>
+          </div>
+        </div>
+
+        <!-- Goal Splitter + Progress Tracker Card -->
+        <div class="glass-card p-5 md:p-6">
+          <div class="flex flex-wrap justify-between items-center border-b pb-2 mb-4">
+            <h3 class="font-bold text-lg">🎯 Goal Splitter & Visual Progress</h3>
+            <div class="flex gap-2 text-xs">
+              <span class="bg-green-100 px-2 py-1 rounded-full">🔥 Streak: <span id="streakCount">0</span></span>
+              <span class="bg-purple-100 px-2 py-1 rounded-full">🏆 Level: <span id="userLevel">Beginner</span></span>
+            </div>
+          </div>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div>
+              <p class="font-semibold text-gray-700">Big goal: <span id="mainGoalDisplay">Not set</span></p>
+              <div class="mt-2 bg-gray-200 rounded-full h-3 w-full"><div id="goalProgressFill" class="bg-blue-500 h-3 rounded-full w-0 progress-bar"></div></div>
+              <p class="text-sm mt-1">Weekly micro-goal: <span id="microGoalText">-</span></p>
+              <button id="setGoalBtn" class="mt-3 text-sm bg-gray-800 text-white px-3 py-1.5 rounded-lg">Set/Update Goal (e.g., Lose 10kg)</button>
+            </div>
+            <div>
+              <canvas id="weightChart" width="300" height="150" style="max-height:160px"></canvas>
+              <div class="text-center text-xs text-gray-500 mt-1">Last 4 weeks progress</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Diet + Local Food Generator Card -->
+        <div class="glass-card p-5 md:p-6">
+          <h3 class="font-bold text-lg mb-2">🍽️ Smart Diet (Pak/IN local cuisine)</h3>
+          <div id="dietSuggestion" class="bg-emerald-50 p-3 rounded-xl text-sm">👉 Tell me your goal & preferences to get roti/daal/chicken based plan.</div>
+          <button id="refreshDietBtn" class="mt-2 text-blue-600 text-sm underline">Generate today's meal</button>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR: ADS + Memory stats + Challenge -->
+      <div class="space-y-6">
+        <!-- Google AdSense placeholder (designated space) -->
+        <div class="ad-placeholder p-4 text-center">
+          <div class="text-xs font-medium uppercase tracking-wide">Advertisement</div>
+          <div class="my-2 text-gray-500">📢 Google AdSense Code Area</div>
+          <div class="border-t border-dashed pt-2 text-[10px] text-gray-400">Insert AdSense unit ID: <span class="font-mono">ca-pub-XXXXXXXX</span><br> Responsive banner</div>
+          <!-- Actual AdSense integration hint: Replace with <ins> tag -->
+          <div class="bg-white/50 rounded p-2 mt-1 text-[10px]">✨ Auto ads ready — paste your AdSense code here</div>
+        </div>
+        <!-- User Memory Snapshot (Body memory system) -->
+        <div class="glass-card p-4">
+          <h3 class="font-bold flex gap-1">🧠 Body Memory System</h3>
+          <div class="text-sm space-y-1 mt-2">
+            <p>⚖️ Weight: <span id="memoryWeight">70 kg</span> | 📏 Height: <span id="memoryHeight">170 cm</span></p>
+            <p>🎯 Fitness Level: <span id="memoryLevel">Beginner</span> | 🔄 Habit: <span id="memoryHabit">Consistent</span></p>
+            <button id="updateProfileBtn" class="text-xs bg-gray-200 px-2 py-1 rounded mt-1">Update Profile (age/weight/height)</button>
+          </div>
+        </div>
+        <!-- Gamification & Challenge -->
+        <div class="glass-card p-4">
+          <h3 class="font-bold">🏆 Today's Challenge</h3>
+          <p id="dailyChallengeText" class="text-sm mt-1">7-day no sugar streak: Day 1</p>
+          <div class="flex justify-between mt-2 text-sm"><span>🔥 Streak: <span id="streakValue">0</span> days</span><button id="completeChallengeBtn" class="text-green-600 text-xs font-semibold">✓ Mark Done</button></div>
+          <div class="mt-3 bg-gray-200 h-1.5 rounded-full"><div id="levelProgressBar" class="bg-yellow-500 h-1.5 rounded-full w-0"></div></div>
+          <p class="text-[11px] mt-2 text-gray-500">Complete daily challenges to level up!</p>
+        </div>
+        <!-- Emergency Reset Mode -->
+        <button id="emergencyResetBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-700 p-3 rounded-xl text-sm font-semibold border border-red-200 transition">🔄 Emergency Reset Mode — Restart Easy</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- FULL MEMORY SYSTEM (LocalStorage) ----------
+    let userMemory = {
+      name: "User",
+      age: 28, gender: "male", weight: 70, height: 170,
+      goal: "Lose 10kg", activity: "moderate",
+      fitnessLevel: "Beginner", habits: [],
+      progressHistory: [70, 69.2, 68.5, 67.8], // last 4 weeks mock
+      streak: 0,
+      level: "Beginner",
+      levelXP: 0,
+      weeklyMicroTarget: "Week1: -1kg",
+      currentMainProgress: 0, // % towards big goal
+      lastCheckinDate: null,
+      skippedWorkouts: 0,
+      moodAdjustment: "normal"
+    };
+    
+    // Load memory
+    function loadMemory() {
+      const stored = localStorage.getItem("fitguide_memory");
+      if(stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          userMemory = { ...userMemory, ...parsed };
+          if(!userMemory.progressHistory) userMemory.progressHistory = [70,69.2,68.5,67.8];
+          if(!userMemory.streak) userMemory.streak = 0;
+        } catch(e) {}
+      }
+      updateUIFromMemory();
+      renderChart();
+      updateStreakAndLevelDisplay();
+      updateGoalSplitter();
+      updateDietSuggestionBasedOnGoal();
+    }
+    function saveMemory() {
+      localStorage.setItem("fitguide_memory", JSON.stringify(userMemory));
+      updateUIFromMemory();
+      updateStreakAndLevelDisplay();
+      renderChart();
+    }
+    function updateUIFromMemory() {
+      document.getElementById("memoryWeight").innerText = userMemory.weight + " kg";
+      document.getElementById("memoryHeight").innerText = userMemory.height + " cm";
+      document.getElementById("memoryLevel").innerText = userMemory.fitnessLevel;
+      document.getElementById("memoryHabit").innerText = (userMemory.streak>2)?"Consistent":"Building";
+      document.getElementById("streakCount").innerText = userMemory.streak;
+      document.getElementById("streakValue").innerText = userMemory.streak;
+      document.getElementById("userLevel").innerText = userMemory.level;
+    }
+    function updateStreakAndLevelDisplay() {
+      let levelMap = { "Beginner":0, "Intermediate":300, "Advanced":800, "Elite":1500 };
+      let xp = userMemory.levelXP || 0;
+      let currentLevel = userMemory.level;
+      let nextThreshold = levelMap[currentLevel] || 300;
+      let progressPercent = Math.min(100, (xp/nextThreshold)*100);
+      document.getElementById("levelProgressBar").style.width = progressPercent+"%";
+      if(xp >= nextThreshold && currentLevel !== "Elite") {
+        if(currentLevel==="Beginner") { userMemory.level="Intermediate"; userMemory.levelXP=0; addAIMessage("🏆 Amazing! You've reached INTERMEDIATE level! More challenges unlocked."); }
+        else if(currentLevel==="Intermediate") { userMemory.level="Advanced"; userMemory.levelXP=0; addAIMessage("🔥🔥 Incredible! You're now ADVANCED level!");}
+        else if(currentLevel==="Advanced") { userMemory.level="Elite"; userMemory.levelXP=0; addAIMessage("👑 ELITE COACH LEVEL! You're a fitness role model.");}
+        saveMemory();
+      }
+    }
+    function addXP(amount) {
+      userMemory.levelXP = (userMemory.levelXP || 0) + amount;
+      updateStreakAndLevelDisplay();
+      saveMemory();
+    }
+    function updateGoalSplitter() {
+      let bigGoalStr = userMemory.goal;
+      document.getElementById("mainGoalDisplay").innerText = bigGoalStr;
+      let match = bigGoalStr.match(/\d+/);
+      let targetKg = match ? parseInt(match[0]) : 10;
+      let startWeight = 70;
+      let currentWeight = userMemory.weight;
+      let lostSoFar = startWeight - currentWeight;
+      let percent = Math.min(100, Math.max(0, (lostSoFar/targetKg)*100));
+      document.getElementById("goalProgressFill").style.width = percent+"%";
+      let weeksLeft = Math.ceil((targetKg - lostSoFar)/0.8);
+      let microText = `This week: lose 0.8kg → ${(currentWeight-0.8).toFixed(1)}kg target`;
+      document.getElementById("microGoalText").innerText = microText;
+      userMemory.weeklyMicroTarget = microText;
+    }
+    function renderChart() {
+      const ctx = document.getElementById('weightChart').getContext('2d');
+      if(window.weightChartInstance) window.weightChartInstance.destroy();
+      window.weightChartInstance = new Chart(ctx, {
+        type: 'line', data: { labels: ['Week 4','Week 3','Week 2','Last week'], datasets: [{ label: 'Weight (kg)', data: userMemory.progressHistory, borderColor: '#3b82f6', tension: 0.2, fill: false }] }
+      });
+    }
+    function updateDietSuggestionBasedOnGoal() {
+      let goal = userMemory.goal.toLowerCase();
+      let suggestion = "";
+      if(goal.includes("lose")) suggestion = "🥗 Breakfast: Chana chat + 1 roti | Lunch: Daal (1 bowl) + salad | Dinner: Grilled chicken (150g) + sabzi | Snack: Roasted channa. Avoid extra oil, drink 3L water.";
+      else if(goal.includes("gain") || goal.includes("muscle")) suggestion = "🍗 Breakfast: 3 eggs + paratha | Lunch: Chicken curry + 2 roti + rice (small) | Dinner: Beef/daal + veggies | Post-workout: Banana & milk. Desi gainer!";
+      else suggestion = "🥘 Balanced: Roti x2 + saag/palak, Chicken tikka, curd. Hydration & portion control. Local & healthy.";
+      document.getElementById("dietSuggestion").innerHTML = suggestion;
+    }
+    // Adaptive AI logic & daily check-in / mood
+    function adaptivePlanBasedOnMoodAndConsistency(moodInput, skippedFlag=false) {
+      let mood = moodInput || userMemory.moodAdjustment;
+      if(skippedFlag) userMemory.skippedWorkouts = (userMemory.skippedWorkouts ||0)+1;
+      if(mood.includes("lazy") || mood.includes("low") || mood.includes("tired")) {
+        return "💡 Adaptive AI: I see you're feeling low-energy. Let's do a 5-min mini workout: 2 min stretching + 3 min brisk walk or light yoga. Small step, huge impact! Tomorrow we build up.";
+      } else if(mood.includes("energetic") || mood.includes("high") || mood.includes("intense")) {
+        userMemory.skippedWorkouts = Math.max(0, (userMemory.skippedWorkouts||0)-1);
+        return "⚡ High-energy mode! Let's do 30 min HIIT: Jump squats, mountain climbers, burpees (45s on/15s off) + core finisher. You'll crush it!";
+      } else if(skippedFlag) {
+        return "⚠️ You missed workout yesterday — plan auto-adjusted: Today is easy active recovery (walk 20 min + mobility). Consistency > intensity. Let's restart!";
+      } else {
+        return "🏋️ Adaptive daily plan: Full body (squats, pushups, lunges, plank) 3 sets each. Rest 60s. Finish with cooldown. Based on your level: "+userMemory.fitnessLevel;
+      }
+    }
+    function dailyCheckinLogic() {
+      let today = new Date().toDateString();
+      if(userMemory.lastCheckinDate === today) return "✅ You already checked in today! Keep crushing.";
+      userMemory.lastCheckinDate = today;
+      addXP(15);
+      userMemory.streak = (userMemory.streak ||0)+1;
+      saveMemory();
+      return "Daily Check-in ✔️ +15XP! 🔥 Your streak is now "+userMemory.streak+" days. Today's mindset: Stay consistent, even 10 mins matter!";
+    }
+    function emergencyReset() {
+      userMemory.weight = 70; userMemory.progressHistory = [70,69.5,69,68.5]; userMemory.streak = 0; userMemory.level="Beginner"; userMemory.levelXP=0; userMemory.skippedWorkouts=0;
+      userMemory.goal="Lose 10kg"; userMemory.fitnessLevel="Beginner";
+      saveMemory(); addAIMessage("🔄 Emergency Reset activated: No pressure, we restart from Day 1 Easy Mode. Fresh start, same determination. You got this!");
+      renderChart(); updateGoalSplitter(); updateDietSuggestionBasedOnGoal();
+    }
+    // Process user message with full memory + dynamic AI
+    function processUserMessage(msg) {
+      let lower = msg.toLowerCase();
+      if(lower.includes("daily check-in") || lower.includes("checkin")) return dailyCheckinLogic();
+      if(lower.includes("progress")) return `📈 Your last recorded weight: ${userMemory.weight} kg. Goal progress: ${document.getElementById("goalProgressFill").style.width}. Keep going! Weekly micro: ${userMemory.weeklyMicroTarget}`;
+      if(lower.includes("lazy") || lower.includes("feel lazy")) return adaptivePlanBasedOnMoodAndConsistency("lazy", false);
+      if(lower.includes("energetic")) return adaptivePlanBasedOnMoodAndConsistency("energetic", false);
+      if(lower.includes("workout skip") || lower.includes("skip workout")) return adaptivePlanBasedOnMoodAndConsistency("normal", true);
+      if(lower.includes("workout plan")) return adaptivePlanBasedOnMoodAndConsistency(userMemory.moodAdjustment, false);
+      if(lower.includes("diet plan")) { updateDietSuggestionBasedOnGoal(); return "🍛 Here's your local diet: "+document.getElementById("dietSuggestion").innerText; }
+      if(lower.includes("set goal")) return "Tell me your goal (e.g., 'Lose 8kg' or 'Gain muscle'). I'll split into weekly targets!";
+      if(lower.includes("update profile")) return "Please reply with: weight, height, age (example: weight 75, height 175, age 30)";
+      if(lower.match(/weight\s+\d+/)) {
+        let newW = parseInt(msg.match(/\d+/)[0]);
+        userMemory.weight = newW;
+        userMemory.progressHistory.push(newW);
+        if(userMemory.progressHistory.length>4) userMemory.progressHistory.shift();
+        saveMemory(); renderChart(); updateGoalSplitter();
+        return "Weight updated to "+newW+"kg! Progress chart refreshed. Amazing consistency!";
+      }
+      if(lower.match(/height\s+\d+/)) {
+        let newH = parseInt(msg.match(/\d+/)[0]);
+        userMemory.height = newH; saveMemory(); return "Height updated!";
+      }
+      if(lower.includes("goal")) {
+        let goalMatch = msg.match(/lose\s+\d+kg|gain\s+\d+kg|muscle|fat loss/i);
+        if(goalMatch) { userMemory.goal = goalMatch[0]; saveMemory(); updateGoalSplitter(); updateDietSuggestionBasedOnGoal(); return `🎯 Goal set to ${userMemory.goal}. We split into weekly micro-goals: ${userMemory.weeklyMicroTarget} 👏`; }
+        else return "Please specify like 'Lose 10kg' or 'Gain muscle'";
+      }
+      return adaptivePlanBasedOnMoodAndConsistency("normal", false) + "\n\n💬 Tip: Try 'daily check-in', 'workout plan', or 'set goal lose 5kg'";
+    }
+    // Subscription logic and AdSense placeholder (monetization ready)
+    let isSubscribed = false;
+    function updateSubscriptionUI() {
+      let badge = document.getElementById("subscriptionBadge");
+      if(isSubscribed) { badge.innerHTML = "✅ Premium Active · $25/mo · Full AI Coach"; badge.classList.remove("bg-amber-100","text-amber-800"); badge.classList.add("bg-green-100","text-green-800"); }
+      else { badge.innerHTML = "⚠️ Free Trial · Unlock $25/mo for adaptive memory & analytics"; badge.classList.add("bg-amber-100"); }
+    }
+    document.getElementById("subscribeBtn").addEventListener("click",()=>{
+      isSubscribed=true; updateSubscriptionUI(); addAIMessage("💎 Thank you for subscribing! Full adaptive AI memory, gamification, and advanced insights are now unlimited. You have access to all pro features.");
+      saveMemory();
+    });
+    // UI binding
+    const chatDiv = document.getElementById("chatMessages");
+    function addAIMessage(text, isUser=false) {
+      let bubble = document.createElement("div");
+      bubble.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+      bubble.innerHTML = `<div class="${isUser ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'} rounded-2xl px-4 py-2 max-w-[85%] shadow-sm text-sm">${text}</div>`;
+      chatDiv.appendChild(bubble);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+    function handleSend() {
+      let inp = document.getElementById("userInput");
+      let txt = inp.value.trim();
+      if(!txt) return;
+      addAIMessage(txt, true);
+      let reply = processUserMessage(txt);
+      addAIMessage(reply);
+      inp.value = "";
+      if(txt.toLowerCase().includes("complete challenge")) markChallengeDone();
+    }
+    function markChallengeDone() {
+      addXP(25);
+      userMemory.streak = (userMemory.streak||0)+1;
+      saveMemory();
+      addAIMessage("🎉 Challenge completed! +25XP and streak increased! New challenge tomorrow. Keep fire alive!");
+      document.getElementById("dailyChallengeText").innerHTML = "Daily challenge: 10 min walk — Already done today! Come back tomorrow.";
+    }
+    // random daily challenge
+    function refreshDailyChallenge() {
+      let challenges = ["🧃 No sugar today", "🚶 8000 steps", "💪 20 pushups", "🧘 5 min stretch", "🥤 Drink 3L water"];
+      let rand = challenges[Math.floor(Math.random()*challenges.length)];
+      document.getElementById("dailyChallengeText").innerHTML = rand + " 🔥 +25XP";
+    }
+    document.getElementById("sendBtn").addEventListener("click", handleSend);
+    document.getElementById("userInput").addEventListener("keypress",(e)=>e.key==="Enter"&&handleSend());
+    document.getElementById("setGoalBtn").addEventListener("click",()=>{ addAIMessage("Please type: 'set goal lose 8kg' or 'gain muscle'"); });
+    document.getElementById("refreshDietBtn").addEventListener("click",()=>{ updateDietSuggestionBasedOnGoal(); addAIMessage("🍛 Diet refreshed based on your goal: "+document.getElementById("dietSuggestion").innerText); });
+    document.getElementById("updateProfileBtn").addEventListener("click",()=>{ addAIMessage("Send: weight 72, height 175, age 30 to update memory."); });
+    document.getElementById("emergencyResetBtn").addEventListener("click",()=>{ emergencyReset(); });
+    document.getElementById("completeChallengeBtn").addEventListener("click",()=>{ markChallengeDone(); });
+    document.querySelectorAll(".quickCmd").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        let cmd = btn.getAttribute("data-cmd");
+        document.getElementById("userInput").value = cmd;
+        handleSend();
+      });
+    });
+    // Initialize
+    loadMemory();
+    refreshDailyChallenge();
+    addAIMessage("👋 Hey! I'm FitGuide AI — Adaptive Coach. I remember your body & progress. Let's set a goal (e.g., 'Lose 10kg') or do daily check-in! 💪");
+  </script>
+  <!-- Additional SEO: structured data -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "FitGuide AI Fitness Assistant",
+      "description": "Adaptive AI fitness coach with personalization, progress tracking, diet plans, gamification, and subscription monetization.",
+      "applicationCategory": "Health & Fitness",
+      "offers": { "@type": "Offer", "price": "25", "priceCurrency": "USD" }
+    }
+  </script>
+</body>
+</html>
